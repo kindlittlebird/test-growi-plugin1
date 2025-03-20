@@ -1,62 +1,66 @@
-module.exports = function(crowi) {
-    const logger = require('@alias/logger')('growi:plugins:custom-editor-button');
+import { Plugin } from '@growi/core';
+
+class MyToolbarPlugin extends Plugin {
+  constructor(pluginName) {
+    super(pluginName);
+  }
+
+  async onAttached() {
+    // ツールバーが読み込まれるのを待つ
+    this.waitForToolbarAndAddButton();
+  }
+
+  waitForToolbarAndAddButton() {
+    let attempts = 0;
+    const maxAttempts = 10;
     
-    // 初期化処理
-    const initialize = () => {
-      logger.info('custom-editor-button plugin initialized');
+    const checkInterval = setInterval(() => {
+      attempts++;
+      const toolbar = document.querySelector('div._codemirror-editor-toolbar_eyhib_1');
       
-      // コンソールに確認用のメッセージ
-      console.log('custom-editor-button plugin initialized');
-  
-      // 編集画面のボタン追加
-      if (crowi.pluginService.isV5Available()) {
-        // GROWIv5の場合
-        registerEditorButtonV5();
-      } else {
-        // GROWIv4以前の場合（古いバージョン）
-        registerEditorButtonLegacy();
+      if (toolbar) {
+        clearInterval(checkInterval);
+        this.addCustomButton(toolbar);
       }
-    };
-  
-    // GROWIv5向けボタン追加
-    const registerEditorButtonV5 = () => {
-      const customButton = {
-        icon: 'fa fa-star', // FontAwesomeのアイコンクラス
-        name: 'customButton',
-        text: 'Custom Button',
-        actionHandler: (cw) => {
-          // エディタのセレクションを取得
-          const editor = cw?.markdownEditor?.getEditorHandler?.();
-          if (!editor) return;
-          
-          const currentSelection = editor.getSelection();
-          
-          // 選択範囲を何かで囲む、またはカーソル位置に何かを挿入
-          editor.replaceSelection(`【${currentSelection}】`);
-        },
-      };
-  
-      // エディタツールバーに登録
-      if (crowi.customEditorButtons == null) {
-        crowi.customEditorButtons = [];
+      else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        console.warn('ツールバーが見つかりませんでした');
       }
-      crowi.customEditorButtons.push(customButton);
-    };
+    }, 1000);
+  }
+
+  addCustomButton(toolbar) {
+    // ボタン要素の作成
+    const button = document.createElement('button');
+    button.className = 'btn btn-outline-secondary btn-sm';
+    button.innerHTML = '<i class="fa fa-star"></i>'; // Font Awesomeアイコンの例
+    button.title = 'カスタムボタン';
+    
+    // ボタンクリック時の動作
+    button.addEventListener('click', () => {
+      // エディタにテキストを挿入するロジック
+      const editor = this.getEditor(); // エディタのインスタンスを取得する実装が必要
+      if (editor) {
+        editor.replaceSelection('挿入したいテキスト');
+      }
+    });
+    
+    // ツールバーに追加
+    toolbar.appendChild(button);
+  }
   
-    // 古いバージョン向け（必要に応じて）
-    const registerEditorButtonLegacy = () => {
-      // 古いバージョン用のコード
-      logger.info('Legacy version is not supported by this plugin');
-    };
-  
-    // プラグイン情報
-    const meta = {
-      name: "Custom Editor Button",
-      description: "Add custom buttons to GROWI editor menu",
-    };
-  
-    return {
-      meta,
-      init: initialize,
-    };
-  };
+  // エディタインスタンスを取得するヘルパーメソッド
+  getEditor() {
+    // GROWIのエディタインスタンスにアクセスするロジック
+    // 実際の実装はGROWIのバージョンによって異なる場合があります
+    const editorContainer = document.querySelector('.editor-container');
+    if (editorContainer && editorContainer.__vue__) {
+      return editorContainer.__vue__.editor;
+    }
+    return null;
+  }
+}
+
+// プラグインのインスタンス化と登録
+const plugin = new MyToolbarPlugin('my-toolbar-plugin');
+plugin.register();
