@@ -40,7 +40,7 @@
   "growiPlugin": {
     "schemaVersion": "4",
     "types": [
-      "script"
+      "client"
     ]
   }
 }
