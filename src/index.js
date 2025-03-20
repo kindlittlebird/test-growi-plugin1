@@ -26,7 +26,7 @@ class MyToolbarPlugin extends Plugin {
         clearInterval(checkInterval);
         console.warn('ツールバーが見つかりませんでした');
       }
-    }, 1000);
+    }, 5000);
   }
 
   addCustomButton(toolbar) {
