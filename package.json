@@ -1,0 +1,23 @@
+{
+  "name": "growi-plugin-test",
+  "version": "0.1.0",
+  "description": "Your GROWI plugin description",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "echo \"No build process required\" && exit 0",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "keywords": [
+    "growi",
+    "plugin"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "peerDependencies": {
+    "@growi/core": "^5.0.0"
+  },
+  "devDependencies": {
+    "@growi/core": "^5.0.0",
+    "@growi/plugin-utils": "^5.0.0"
+  }
+}
