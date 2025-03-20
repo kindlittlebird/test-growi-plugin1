@@ -3,125 +3,67 @@ import { Plugin } from '@growi/core';
 class MyToolbarPlugin extends Plugin {
   constructor(pluginName) {
     super(pluginName);
-    console.log('MyToolbarPlugin: プラグインが初期化されました');
   }
 
   async onAttached() {
-    console.log('MyToolbarPlugin: onAttached が呼び出されました');
-    // ツールバーが読み込まれるのを待つ
-    this.waitForToolbarAndAddButton();
-  }
-
-  waitForToolbarAndAddButton() {
-    console.log('MyToolbarPlugin: ツールバーの検索を開始します');
-    let attempts = 0;
-    const maxAttempts = 20; // 試行回数を増やす
+    console.log('MyToolbarPlugin: プラグインが読み込まれました');
     
-    const checkInterval = setInterval(() => {
-      attempts++;
-      console.log(`MyToolbarPlugin: ツールバー検索試行 ${attempts}/${maxAttempts}`);
-      
-      // セレクタを複数試してみる
-      const toolbarSelectors = [
-        'div._codemirror-editor-toolbar_eyhib_1',
-        '.editor-toolbar',
-        '.CodeMirror-toolBar',
-        '.growi-editor-toolbar',
-        '.rich-attachment-addon',
-        '.user-dropdown-menu', // 明らかに存在する要素で確認テスト
-      ];
-      
-      let toolbar = null;
-      for (const selector of toolbarSelectors) {
-        const element = document.querySelector(selector);
-        if (element) {
-          console.log(`MyToolbarPlugin: 要素が見つかりました: ${selector}`, element);
-          toolbar = element;
-          break;
-        }
-      }
-      
-      if (toolbar) {
-        clearInterval(checkInterval);
-        console.log('MyToolbarPlugin: ツールバーが見つかりました。ボタンを追加します');
-        this.addCustomButton(toolbar);
-      }
-      else if (attempts >= maxAttempts) {
-        clearInterval(checkInterval);
-        console.warn('MyToolbarPlugin: ツールバーが見つかりませんでした。現在のDOM構造:', document.body.innerHTML.substring(0, 500) + '...');
-      }
-    }, 1000);
+    // DOMContentLoadedイベントを待つ
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.initPlugin());
+    } else {
+      this.initPlugin();
+    }
   }
 
-  addCustomButton(toolbar) {
-    console.log('MyToolbarPlugin: ボタン作成開始');
-    try {
-      // ボタン要素の作成
-      const button = document.createElement('button');
-      button.className = 'btn btn-outline-secondary btn-sm';
-      button.innerHTML = '<i class="fa fa-star"></i>'; // Font Awesomeアイコンの例
-      button.title = 'カスタムボタン';
-      
-      console.log('MyToolbarPlugin: ボタン要素を作成しました', button);
-      
-      // ボタンクリック時の動作
-      button.addEventListener('click', () => {
-        console.log('MyToolbarPlugin: ボタンがクリックされました');
-        // エディタにテキストを挿入するロジック
-        const editor = this.getEditor();
-        console.log('MyToolbarPlugin: 取得したエディタ:', editor);
-        if (editor) {
-          editor.replaceSelection('挿入したいテキスト');
-        }
-      });
-      
-      // ツールバーに追加
-      toolbar.appendChild(button);
-      console.log('MyToolbarPlugin: ボタンをツールバーに追加しました');
-    } catch (error) {
-      console.error('MyToolbarPlugin: ボタン追加中にエラーが発生しました', error);
-    }
-  }
-  
-  getEditor() {
-    console.log('MyToolbarPlugin: エディタを取得しようとしています');
-    try {
-      // いくつかの方法を試してエディタを見つける
-      const possibleEditorContainers = [
-        document.querySelector('.editor-container'),
-        document.querySelector('.CodeMirror'),
-        document.querySelector('.monaco-editor')
-      ];
-      
-      for (const container of possibleEditorContainers) {
-        if (!container) continue;
-        
-        console.log('MyToolbarPlugin: エディタコンテナの候補を見つけました', container);
-        
-        // Vue.jsインスタンスを確認
-        if (container.__vue__ && container.__vue__.editor) {
-          console.log('MyToolbarPlugin: Vue.jsエディタインスタンスを見つけました');
-          return container.__vue__.editor;
-        }
-        
-        // CodeMirrorの場合
-        if (container.CodeMirror) {
-          console.log('MyToolbarPlugin: CodeMirrorインスタンスを見つけました');
-          return container.CodeMirror;
+  initPlugin() {
+    console.log('MyToolbarPlugin: 初期化を開始します');
+    // 記事のサンプルに合わせてMutationObserverを使用
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          this.checkAndAddButton();
         }
       }
-      
-      console.warn('MyToolbarPlugin: エディタインスタンスを見つけられませんでした');
-      return null;
-    } catch (error) {
-      console.error('MyToolbarPlugin: エディタ取得中にエラーが発生しました', error);
-      return null;
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // 最初の確認
+    this.checkAndAddButton();
+  }
+
+  checkAndAddButton() {
+    // 記事ではクラス名を '.layout-root' で見つけています
+    // GROWIのバージョンによって適切なセレクタを使用してください
+    const toolbar = document.querySelector('.editor-toolbar');
+    if (toolbar && !toolbar.querySelector('.my-custom-button')) {
+      console.log('MyToolbarPlugin: ツールバーを発見しました、ボタンを追加します');
+      this.addButton(toolbar);
     }
+  }
+
+  addButton(toolbar) {
+    const button = document.createElement('button');
+    button.className = 'btn btn-outline-secondary btn-sm my-custom-button';
+    button.innerHTML = '<i class="fa fa-star"></i>';
+    button.title = 'マイカスタムボタン';
+    
+    button.addEventListener('click', () => {
+      console.log('MyToolbarPlugin: ボタンがクリックされました');
+      // エディタの取得方法は記事を参考に
+      const editor = document.querySelector('.CodeMirror').CodeMirror;
+      if (editor) {
+        editor.replaceSelection('挿入するテキスト');
+      }
+    });
+    
+    toolbar.appendChild(button);
+    console.log('MyToolbarPlugin: ボタンを追加しました');
   }
 }
 
 // プラグインのインスタンス化と登録
 console.log('MyToolbarPlugin: プラグイン登録を開始します');
 const plugin = new MyToolbarPlugin('my-toolbar-plugin');
-plugin.register();
-console.log('MyToolbarPlugin: プラグイン登録が完了しました');
+export default plugin;
